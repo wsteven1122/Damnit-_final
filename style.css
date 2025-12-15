@@ -40,7 +40,7 @@ html {
   position: absolute;
   top: 0;
   left: 0;
-  transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+  transition: transform 0.1.5s cubic-bezier(0.645, 0.045, 0.355, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -196,6 +196,7 @@ html {
    ========================================= */
 
 /* 漂浮動畫 */
+
 @keyframes floatAnim {
   0% {
     transform: translateY(0px) rotate(0deg);
@@ -215,6 +216,40 @@ html {
 }
 .floater:hover {
   margin-top: -10px;
+}
+
+/* ===============================
+   Page slide transition (往下滑轉場)
+   =============================== */
+
+#game-container {
+  position: relative;
+  overflow: hidden; /* 你本來就有類似設定，保留 */
+}
+
+.full-page {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  /* ✅ 關鍵：用 transform 來做滑動 */
+  transform: translateY(100%);
+  transition: transform 0.8s ease-in-out;
+}
+
+.full-page.active-page {
+  transform: translateY(0%);
+}
+
+.full-page.hidden-page {
+  transform: translateY(100%);
+}
+
+.full-page.scrolled-up {
+  transform: translateY(-100%);
 }
 
 /* 手部動畫 */
@@ -686,13 +721,21 @@ html {
 
 #main-egg {
   position: absolute;
-  top: 50%; /* 原本大概 40% → 往上挪 */
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 280px; /* 原本 180px → 放大約 45% */
-  height: 337px; /* 跟寬一致 */
+
+  width: 280px;
+  height: 337px;
+
+  object-fit: cover; /* ✅ 填滿外框，多的裁掉 */
+  object-position: center; /* ✅ 置中裁剪 */
   z-index: 5;
-  transition: transform 0.2s;
+}
+
+/* 吃飯狀態：只縮一點點 */
+#main-egg.eating {
+  transform: translate(-50%, -50%) scale(0.81);
 }
 
 .ingredient {
@@ -1095,7 +1138,7 @@ html {
 
 /* ✅ 圖鑑頁背景：只改這裡（覆蓋後段的 transparent） */
 #page-gallery.full-page {
-  background: #8faaff !important; /* 你要的背景色就改這行 */
+  background: transparent !important;
 }
 
 /* ==============================
@@ -1108,11 +1151,17 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
-/* 容器網格（你現在已經正常就保持） */
+/* 真正可以滾動的圖鑑區域 */
 #page-gallery .gallery-container {
+  height: 100vh; /* 吃滿畫面 */
+  overflow-y: auto; /* ✅ 滾這裡 */
+  -webkit-overflow-scrolling: touch;
+
   width: min(1100px, 100%);
   margin: 0 auto;
-  padding: 200px 30px 90px;
+  padding: 200px 80px 120px; /* 上下左右留白 */
+  box-sizing: border-box;
+
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 90px 110px;
@@ -1427,3 +1476,287 @@ html {
   z-index: 20;
   pointer-events: none;
 }
+
+/* ✅ 強制每一頁裁切溢出（解決超大蛋液/網格/射線殘影） */
+#game-container .full-page {
+  overflow: hidden;
+}
+
+/* ✅ 再保險一次：容器也裁切 */
+#game-container {
+  overflow: hidden;
+}
+
+/* ✅ 圖鑑：整頁不滾，改讓內容區滾 */
+#page-gallery {
+  overflow: hidden; /* 避免整頁滾動失敗 */
+}
+
+#page-gallery #gallery-grid {
+  height: 100%;
+  max-height: 100vh;
+  overflow-y: auto; /* ✅ 真正可滾的地方 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ✅ 圖鑑：左右留白加大，避免卡片旋轉/陰影被裁切 */
+#page-gallery #gallery-grid {
+  padding-left: 80px !important;
+  padding-right: 80px !important;
+  box-sizing: border-box;
+}
+
+/* 白屏漸變轉場（只給 Magic→結局用） */
+#white-fade {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 999999;
+}
+
+#btn-skip-fade {
+  position: fixed;
+  right: 40px;
+  bottom: 40px; /* 想右上就改成 top:40px; bottom:auto; */
+  width: 110px;
+  z-index: 1000000; /* 比白屏還上面 */
+  display: none; /* 平常藏起來 */
+}
+
+/* ✅ 只讓圖鑑跟介紹頁一樣：透出 game-container 的漸層 */
+#page-gallery {
+  background: transparent !important;
+}
+
+#btn-home {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 3000; /* 一定要比頁面高 */
+  display: none; /* 預設隱藏，JS 會打開 */
+}
+
+#btn-home {
+  display: block !important;
+  background-color: rgba(
+    255,
+    0,
+    0,
+    0.2
+  ); /* 測試用：看得到代表有出現，只是圖沒載到 */
+}
+
+.hands-intro {
+  position: fixed;
+  left: 0;
+  bottom: -10%;
+  width: 100%;
+  height: 100vh; /* 控制在下半部 */
+  pointer-events: none;
+  z-index: 1200;
+}
+
+.hands-intro .hand-frame {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+
+  opacity: 0;
+  transform: translateY(10px) scale(1.01);
+  transition: opacity 0.35s ease, transform 0.9s ease;
+  will-change: transform, opacity;
+}
+
+/* 顯示當前那張 */
+.hands-intro .hand-frame.show {
+  opacity: 1;
+}
+
+/* 漂浮感（只讓目前顯示的那張漂） */
+.hands-intro .hand-frame.show {
+  animation: handsFloat 2.6s ease-in-out infinite alternate;
+}
+
+@keyframes handsFloat {
+  from {
+    transform: translateY(10px) scale(1.01);
+  }
+  to {
+    transform: translateY(0px) scale(1.01);
+  }
+}
+
+.hands-carousel {
+  position: fixed;
+  left: 0;
+  bottom: -10%;
+  width: 100%;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1200;
+}
+
+.hands-carousel .hand-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transform: translateY(10px) scale(1.01);
+  transition: opacity 0.35s ease, transform 0.9s ease;
+}
+
+.hands-carousel .hand-frame.show {
+  opacity: 1;
+  animation: handsFloat 2.6s ease-in-out infinite alternate;
+}
+
+@keyframes handsFloat {
+  from {
+    transform: translateY(10px) scale(1.01);
+  }
+  to {
+    transform: translateY(0px) scale(1.01);
+  }
+}
+
+/* ===============================
+   手部顯示控制（防止疊在一起）
+   =============================== */
+
+/* 預設全部手都隱藏 */
+.hands-intro,
+.hands-carousel,
+.hands-container {
+  opacity: 0;
+}
+
+/* 只有在對應頁面才顯示 */
+#page-story.active-page .hands-intro {
+  opacity: 1;
+}
+
+#page-select.active-page .hands-container {
+  opacity: 1;
+}
+
+#page-game.active-page #hands-game-carousel,
+#page-result.active-page #hands-result-carousel {
+  opacity: 1;
+}
+
+/* 圖鑑頁本身不滾 */
+#page-gallery {
+  display: none; /* 由 JS 控制顯示 */
+  overflow: hidden; /* ❗不要讓整頁滾 */
+  justify-content: flex-start;
+}
+
+/* 允許卡片旋轉、陰影不被裁 */
+#page-gallery .gallery-container {
+  overflow-x: visible;
+}
+
+#page-gallery .gallery-card {
+  overflow: visible;
+}
+
+#btn-gallery-back {
+  position: fixed;
+  top: 90px;
+  right: 100px;
+  z-index: 999999; /* 永遠在最上面 */
+}
+
+/* ====== Gallery FINAL HOTFIX（請放在 style.css 最底部）====== */
+
+/* 圖鑑頁用 flex 撐滿高度（配合 JS display:flex） */
+#page-gallery {
+  display: none; /* JS 會切成 flex */
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow: hidden; /* 頁面本身不滾 */
+}
+
+/* 返回鍵固定可點 */
+#btn-gallery-back {
+  position: fixed;
+  top: 90px;
+  right: 100px;
+  z-index: 999999;
+  width: 160px;
+  height: auto;
+}
+
+/* 真正可滾：讓 grid 吃滿剩餘高度 */
+#page-gallery #gallery-grid {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  width: min(1100px, 100%);
+  margin: 0 auto;
+
+  /* 上面要讓出按鈕空間 */
+  padding: 200px 80px 120px;
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 90px 110px;
+}
+
+/* 小螢幕 2 欄 */
+@media (max-width: 820px) {
+  #page-gallery #gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px 22px;
+    padding: 140px 30px 90px;
+  }
+}
+
+/* 卡片旋轉陰影不要被裁 */
+#page-gallery #gallery-grid,
+#page-gallery .gallery-card {
+  overflow: visible;
+}
+
+#page-gallery {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 廚房那組手：只佔下半部，避免露到左上角 */
+#hands-game-carousel {
+  height: 55vh !important;
+  bottom: -6% !important;
+}
+#hands-game-carousel .hand-frame {
+  object-position: bottom left;
+}
+
+/* ===============================
+   🔪 全面移除「非介紹頁」的手
+   只保留介紹頁 hands-intro
+   =============================== */
+
+/* 1️⃣ 先把所有手相關容器全部關掉 */
+.hands-carousel,
+.hands-container {
+  display: none !important;
+}
+
+/* 2️⃣ 只允許「介紹頁」的手出現 */
+#page-story .hands-intro {
+  display: block !important;
+  opacity: 1 !important;
+}
+
+/* 3️⃣ 保險：其他頁的 hands-intr*
