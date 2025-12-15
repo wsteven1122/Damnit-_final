@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>蛋米特 Damn it!</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- 預載入圖片 (請確保檔名已修改) -->
+    <link rel="preload" as="image" href="./img/Botton_teaching_Hover.png" />
+    <link rel="preload" as="image" href="./img/sound_brown.png" />
+  </head>
+
+  <body>
+    <!-- 頂部功能按鈕 -->
+    <div id="btn-home" class="top-ui" title="回到首頁"></div>
+    <div id="btn-tutorial" class="top-ui" title="教程"></div>
+    <div id="btn-sound" class="top-ui" title="音樂開關"></div>
+
+    <!-- 教程彈窗 -->
+    <div id="tutorial-modal">
+      <!-- 這就是那個通訊欄容器 -->
+      <div class="modal-content">
+        <!-- 1. 右上角的叉叉 (建議也用圖片，比較符合畫風) -->
+        <div class="close-btn"></div>
+
+        <!-- 2. 文字與內容區域 -->
+        <div class="modal-text-area">
+          <h2>✨ 遊戲玩法 ✨</h2>
+          <p>這將是一場載入史冊的魔法料理實驗！</p>
+          <p>
+            我選擇了用蛋來當主食，不過品種或許還需要思考一下，我想這可能會影響實驗結果。
+          </p>
+          <p>
+            選好了主食蛋後就可以開始實驗了，魔法蛋都很有個性，所以我需要靠把食材喂食給它才能進行實驗。
+          </p>
+          <p>
+            這次實驗我準備了八種食材，就放在桌子上，我打算每次只喂三種食材就好
+          </p>
+          <p>把食材拖動到蛋那裏給它吃個飽，之後就可以施展魔法了，magic！</p>
+          <p>
+            不知道會出現什麽樣的結果呢……出結果之後我得做一個結果圖鑒才行，記錄一下我偉大的實驗成果。
+          </p>
+          <!-- 甚至可以放圖片 -->
+          <!-- <img src="./img/tutorial_img.png" style="width: 100%;"> -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 布幕層 -->
+    <div id="curtain-layer">
+      <div class="curtain-panel curtain-left"></div>
+      <div class="curtain-panel curtain-right"></div>
+    </div>
+
+    <!-- 頁面容器 -->
+    <div id="game-container">
+      <!-- 1. 首頁 -->
+      <div id="page-home" class="full-page active-page">
+        <img
+          src="./img/拼貼手機.PNG"
+          class="deco floater"
+          style="top: 75%; left: 20%" />
+        <img
+          src="./img/拼貼TNT.PNG"
+          class="deco floater"
+          style="top: 1%; right: 43%; animation-delay: 1s" />
+        <!-- 新增貼紙 1 -->
+        <img
+          src="./img/拼貼鷄蛋.PNG"
+          class="deco floater deco-front"
+          style="top: 30%; left: 11%; width: 160px; animation-delay: 0.6s" />
+
+        <!-- 新增貼紙 2 -->
+        <img
+          src="./img/拼貼香菜.PNG"
+          class="deco floater deco-front"
+          style="top: 8%; right: 10%; width: 150px; animation-delay: 1.2s" />
+
+        <!-- 新增貼紙 3 -->
+        <img
+          src="./img/拼貼衣服.PNG"
+          class="deco floater deco-front"
+          style="bottom: 12%; left: 90%; width: 160px; animation-delay: 1.8s" />
+
+        <img
+          src="./img/拼貼魷魚.PNG"
+          class="deco floater deco-front"
+          style="bottom: 50%; left: 75%; width: 160px; animation-delay: 1.8s" />
+
+        <img
+          src="./img/拼貼榴蓮.PNG"
+          class="deco floater deco-front"
+          style="bottom: -9%; left: 60%; width: 160px; animation-delay: 1.8s" />
+
+        <img
+          src="./img/拼貼隕石.PNG"
+          class="deco floater deco-front"
+          style="bottom: 80%; left: 4%; width: 150px; animation-delay: 1.8s" />
+
+        <img
+          src="./img/拼貼檸檬.PNG"
+          class="deco floater deco-front"
+          style="bottom: 25%; left: 5%; width: 160px; animation-delay: 1.8s" />
+
+        <img src="./img/標題立體.png" class="title-logo" alt="Title" />
+        <img
+          src="./img/start-orange.png"
+          id="start-btn"
+          class="img-btn"
+          alt="Start" />
+        <!-- 最底層：放射線 -->
+        <img src="./img/rays.png" class="home-rays" />
+
+        <!-- 最底層：格子布 -->
+        <img src="./img/cloth_grid.png" class="home-grid" />
+
+        <!-- 中層：蛋液（要蓋住上面兩個） -->
+        <img src="./img/egg_splash.png" class="home-splat" />
+      </div>
+
+      <!-- 2. 故事介紹 -->
+      <div id="page-story" class="full-page hidden-page">
+        <div class="chat-container">
+          <!-- 由 JS 動態生成對話 -->
+        </div>
+        <div class="story-controls">
+          <img
+            src="./img/btn_skip_default.png"
+            id="btn-skip"
+            class="img-btn"
+            alt="Skip" />
+          <img src="./img/go-orange.png" id="btn-go" class="img-btn" alt="Go" />
+        </div>
+        <!-- 手部動畫 -->
+        <div class="hands-container" id="hands-story">
+          <img src="./img/hand_left_intro.gif" class="hand-img" />
+          <img src="./img/hand_right_intro.gif" class="hand-img" />
+        </div>
+      </div>
+
+      <!-- 3. 選擇主食 -->
+      <div id="page-select" class="full-page hidden-page">
+        <div style="height: 100px"></div>
+        <div class="egg-carousel" id="egg-carousel">
+          <!-- 卡片由 JS 生成 -->
+        </div>
+        <img
+          src="./img/choose food-orange.png"
+          id="btn-choose-food"
+          class="img-btn disabled"
+          alt="Choose Food" />
+
+        <div class="hands-container" id="hands-select">
+          <img
+            src="./img/hand_left_idle.gif"
+            class="hand-img"
+            style="transform: translateY(100px)" />
+          <img
+            src="./img/hand_right_idle.gif"
+            class="hand-img"
+            style="transform: translateY(100px)" />
+        </div>
+      </div>
+
+      <!-- 4. 遊戲界面 -->
+      <div id="page-game" class="full-page">
+        <!-- 裝飾桌子圖 -->
+        <img src="./img/table_overlay.png" class="table-overlay" />
+
+        <div class="slots-container">
+          <div class="slot" data-idx="0"><div class="slot-remove">x</div></div>
+          <div class="slot" data-idx="1"><div class="slot-remove">x</div></div>
+          <div class="slot" data-idx="2"><div class="slot-remove">x</div></div>
+        </div>
+
+        <img
+          src="./img/magic-orange.png"
+          id="btn-magic"
+          class="img-btn"
+          alt="Magic!" />
+
+        <img src="./img/待機蛋 (去背).gif" id="main-egg" />
+
+        <div class="ingredients-area" id="ingredients-pool">
+          <!-- 食材由 JS 生成 -->
+        </div>
+
+        <div class="hands-container hands-show" style="z-index: 1">
+          <img src="./img/hand_left_idle.gif" class="hand-img" />
+          <img src="./img/hand_right_idle.gif" class="hand-img" />
+        </div>
+
+        <div
+          id="game-tip"
+          class="chat-bubble show"
+          style="position: absolute; top: 50%; opacity: 1; cursor: pointer">
+          別忘了看右上角的教程哦！(點擊消失)
+        </div>
+      </div>
+
+      <!-- 5. 結果界面 -->
+      <div id="page-result" class="full-page">
+        <div class="result-btns">
+          <img
+            src="./img/try again-orange.PNG"
+            id="btn-res-retry"
+            class="img-btn"
+            style="width: 220px" />
+          <img
+            src="./img/pb-orange.png"
+            id="btn-res-book"
+            class="img-btn"
+            style="width: 220px" />
+        </div>
+
+        <div class="plate-area">
+          <img src="./img/盤子.png" class="plate-img" />
+          <img src="" id="result-img" class="result-dish" />
+          <div id="result-name" class="result-name">菜名</div>
+        </div>
+
+        <div class="result-dialog success">
+          <p id="result-text">哎呀！成功了！</p>
+        </div>
+
+        <div class="hands-container hands-show">
+          <img src="./img/hand_left_idle.gif" class="hand-img" />
+          <img src="./img/hand_right_idle.gif" class="hand-img" />
+        </div>
+      </div>
+
+      <!-- 6. 圖鑑界面 -->
+      <div id="page-gallery" class="full-page">
+        <img
+          src="./img/try again-orange.PNG"
+          id="btn-gallery-back"
+          class="img-btn" />
+        <div class="gallery-container" id="gallery-grid">
+          <!-- 卡片由 JS 生成 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 這裡連接 JS 檔案 -->
+    <script src="script.js"></script>
+  </body>
+</html>
