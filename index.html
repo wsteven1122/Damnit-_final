@@ -10,9 +10,16 @@
     <link rel="preload" as="image" href="./img/sound_brown.png" />
   </head>
 
+  <div id="white-fade">
+    <img
+      src="./img/btn_skip_default.png"
+      id="btn-skip-fade"
+      class="img-btn"
+      alt="Skip" />
+  </div>
+
   <body>
     <!-- 頂部功能按鈕 -->
-    <div id="btn-home" class="top-ui" title="回到首頁"></div>
     <div id="btn-tutorial" class="top-ui" title="教程"></div>
     <div id="btn-sound" class="top-ui" title="音樂開關"></div>
 
@@ -54,6 +61,7 @@
 
     <!-- 頁面容器 -->
     <div id="game-container">
+      <div id="btn-home" class="top-ui" title="回到首頁"></div>
       <!-- 1. 首頁 -->
       <div id="page-home" class="full-page active-page">
         <img
@@ -120,6 +128,15 @@
 
       <!-- 2. 故事介紹 -->
       <div id="page-story" class="full-page hidden-page">
+        <div id="hands-intro" class="hands-intro">
+          <img class="hand-frame show" src="./img/hands_1.png" alt="" />
+          <img class="hand-frame" src="./img/hands_2.png" alt="" />
+          <img class="hand-frame" src="./img/hands_3.png" alt="" />
+          <img class="hand-frame" src="./img/hands_4.png" alt="" />
+          <img class="hand-frame" src="./img/hands_5.png" alt="" />
+          <img class="hand-frame" src="./img/hands_6.png" alt="" />
+        </div>
+
         <div class="chat-container">
           <!-- 由 JS 動態生成對話 -->
         </div>
@@ -131,10 +148,11 @@
             alt="Skip" />
           <img src="./img/go-orange.png" id="btn-go" class="img-btn" alt="Go" />
         </div>
-        <!-- 手部動畫 -->
-        <div class="hands-container" id="hands-story">
-          <img src="./img/hand_left_intro.gif" class="hand-img" />
-          <img src="./img/hand_right_intro.gif" class="hand-img" />
+        <div class="hands-carousel" id="hands-select-carousel">
+          <img class="hand-frame show" src="./img/select_hand_1.png" alt="" />
+          <img class="hand-frame" src="./img/select_hand_2.png" alt="" />
+          <img class="hand-frame" src="./img/select_hand_3.png" alt="" />
+          <img class="hand-frame" src="./img/select_hand_4.png" alt="" />
         </div>
       </div>
 
@@ -185,9 +203,11 @@
           <!-- 食材由 JS 生成 -->
         </div>
 
-        <div class="hands-container hands-show" style="z-index: 1">
-          <img src="./img/hand_left_idle.gif" class="hand-img" />
-          <img src="./img/hand_right_idle.gif" class="hand-img" />
+        <div class="hands-carousel" id="hands-game-carousel">
+          <img class="hand-frame show" src="./img/kitchen_hand_1.png" alt="" />
+          <img class="hand-frame" src="./img/kitchen_hand_2.png" alt="" />
+          <img class="hand-frame" src="./img/kitchen_hand_3.png" alt="" />
+          <img class="hand-frame" src="./img/kitchen_hand_4.png" alt="" />
         </div>
 
         <div
@@ -223,9 +243,11 @@
           <p id="result-text">哎呀！成功了！</p>
         </div>
 
-        <div class="hands-container hands-show">
-          <img src="./img/hand_left_idle.gif" class="hand-img" />
-          <img src="./img/hand_right_idle.gif" class="hand-img" />
+        <div class="hands-carousel" id="hands-result-carousel">
+          <img class="hand-frame show" src="./img/result_hand_1.png" alt="" />
+          <img class="hand-frame" src="./img/result_hand_2.png" alt="" />
+          <img class="hand-frame" src="./img/result_hand_3.png" alt="" />
+          <img class="hand-frame" src="./img/result_hand_4.png" alt="" />
         </div>
       </div>
 

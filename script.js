@@ -1,9 +1,49 @@
 // =========================================
+// 🔊 Sound Manager（集中管理）
+// =========================================
+const Sound = {
+  muted: false,
+
+  uiClick: new Audio("./sfx/ui_click.mp3"),
+  eat: new Audio("./sfx/eat.mp3"),
+  magic: new Audio("./sfx/magic.mp3"),
+  curtain: new Audio("./sfx/curtain.mp3"),
+  success: new Audio("./sfx/success.mp3"),
+  fail: new Audio("./sfx/fail.mp3"),
+  bgm: new Audio("./sfx/bgm.mp3"),
+};
+
+function playSfx(audio) {
+  if (!audio) return;
+  if (Sound?.muted) return;
+
+  // ✅ 最穩：每次點擊都用新 audio 播放，避免同一支被卡住
+  const a = audio.cloneNode(true);
+  a.volume = audio.volume ?? 1;
+  a.play().catch(() => {});
+}
+
+// 音量設定
+Sound.uiClick.volume = 1.0;
+Sound.eat.volume = 0.8;
+Sound.magic.volume = 0.8;
+Sound.curtain.volume = 0.7;
+Sound.success.volume = 0.9;
+Sound.fail.volume = 0.9;
+
+Sound.bgm.volume = 0.35;
+Sound.bgm.loop = true;
+
+// 統一播放入口
+Sound.play = (audio) => {
+  if (Sound.muted || !audio) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+};
+
+// =========================================
 //  1. 數據配置 (Ingredients & Eggs)
 // =========================================
-
-const eatSfx = new Audio("./sfx/eat.mp3");
-eatSfx.volume = 0.8; // 音量 0~1，看你喜歡
 
 const EGG_IDLE_SRC = "./img/待機蛋 (去背).gif"; // 待機動畫
 const EGG_EAT_SRC = "./img/egg_eat.gif"; // 吃東西動畫
@@ -171,7 +211,7 @@ const pages = {
   gallery: document.getElementById("page-gallery"),
 };
 const hands = {
-  story: document.getElementById("hands-story"),
+  story: document.getElementById("hands-intro"), // ✅ 修正 id
   select: document.getElementById("hands-select"),
 };
 
@@ -187,10 +227,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- 首頁 ---
 function initHome() {
+  function startIntroHandsCarousel() {
+    startHandsCarouselById("hands-intro", 700);
+  }
   document.getElementById("start-btn").addEventListener("click", () => {
+    if (!window.bgmStarted && Sound?.bgm && !Sound.muted) {
+      Sound.bgm.currentTime = 0;
+      Sound.bgm.play().catch(() => {});
+      window.bgmStarted = true;
+    }
+
     scrollTransition(pages.home, pages.story);
+    updateHands("page-story");
     setTimeout(() => startStory(), 800);
-    document.getElementById("btn-home").style.display = "block";
   });
 
   // 綁定回首頁
@@ -211,6 +260,7 @@ const storyLines = [
 ];
 
 function startStory() {
+  startIntroHandsCarousel();
   hands.story.classList.add("hands-show");
   const container = document.querySelector(".chat-container");
   container.innerHTML = "";
@@ -255,6 +305,8 @@ function startStory() {
 
   btnGo.onclick = () => {
     scrollTransition(pages.story, pages.select);
+    updateHands("page-select");
+
     setTimeout(() => {
       hands.story.classList.remove("hands-show");
       hands.select.classList.add("hands-show");
@@ -416,13 +468,19 @@ function initSelect() {
     }, 50);
   }
 
-  // 按鈕事件
   btnChoose.addEventListener("click", () => {
+    // ✅ 你原本的條件我先不碰（先讓流程回來）
     if (state.selectedEgg === "meat") {
       playCurtainTransition(() => {
         pages.select.style.display = "none";
-        pages.game.style.display = "block";
-        hands.select.classList.remove("hands-show");
+        pages.select.classList.remove("active-page");
+        pages.select.classList.add("hidden-page");
+        pages.select.classList.remove("scrolled-up");
+
+        pages.game.style.display = "flex";
+        pages.game.classList.add("active-page");
+        pages.game.classList.remove("hidden-page", "scrolled-up");
+
         resetGame();
       });
     }
@@ -434,45 +492,13 @@ let isDown = false;
 let startX;
 let scrollLeft;
 
-carousel.addEventListener("mousedown", (e) => {
-  isDown = true;
-  carousel.classList.add("dragging");
-  startX = e.pageX - carousel.offsetLeft;
-  scrollLeft = carousel.scrollLeft;
-});
-carousel.addEventListener("mouseleave", () => {
-  isDown = false;
-  carousel.classList.remove("dragging");
-});
-carousel.addEventListener("mouseup", () => {
-  isDown = false;
-  carousel.classList.remove("dragging");
-});
-carousel.addEventListener("mousemove", (e) => {
-  if (!isDown) return;
-  e.preventDefault();
-  const x = e.pageX - carousel.offsetLeft;
-  const walk = (x - startX) * 2;
-  carousel.scrollLeft = scrollLeft - walk;
-});
-
-btnChoose.addEventListener("click", () => {
-  if (state.selectedEgg === "meat") {
-    playCurtainTransition(() => {
-      pages.select.style.display = "none";
-      pages.game.style.display = "block";
-      hands.select.classList.remove("hands-show");
-      resetGame();
-    });
-  }
-});
-
 // --- 遊戲邏輯 ---
 function initGame() {
   const pool = document.getElementById("ingredients-pool");
   const slots = document.querySelectorAll(".slot");
   const btnMagic = document.getElementById("btn-magic");
   const gameTip = document.getElementById("game-tip");
+  if (gameTip) gameTip.remove();
 
   gameTip.onclick = () => (gameTip.style.display = "none");
 
@@ -507,25 +533,72 @@ function initGame() {
   });
 
   btnMagic.addEventListener("click", () => {
-    playCurtainTransition(showResult);
+    Sound.play(Sound.magic);
+    playWhiteFadeTransition(showResult); // ✅ 只這裡白屏7秒
   });
 }
 
-// 播放喂食音效（如果有做靜音開關，可以一起判斷）
-try {
-  // 如果你有 state.isMuted 或類似變數，可以這樣寫：
-  // if (!state.isMuted) {
-  eatSfx.currentTime = 0; // 每次從頭播
-  eatSfx.play();
-  // }
-} catch (e) {
-  console.warn("eatSfx 播放失敗：", e);
+function playWhiteFadeTransition(callback) {
+  const whiteFade = document.getElementById("white-fade");
+  const skipFadeBtn = document.getElementById("btn-skip-fade");
+
+  const FADE_IN = 5500; // 白屏淡入時間
+  const FADE_OUT = 700; // 白屏淡出時間
+
+  let finished = false;
+
+  function cleanup() {
+    skipFadeBtn.style.display = "none";
+    whiteFade.style.pointerEvents = "none";
+  }
+
+  function playResultSfxAfterFadeOut() {
+    // ✅ showResult() 裡面會算出 state.lastResultIsFail
+    setTimeout(() => {
+      if (state.lastResultIsFail) playSfx(Sound.fail);
+      else playSfx(Sound.success);
+    }, FADE_OUT);
+  }
+
+  function finishEarly() {
+    if (finished) return;
+    finished = true;
+
+    // 立刻淡出白屏
+    whiteFade.style.transition = `opacity ${FADE_OUT}ms ease`;
+    whiteFade.style.opacity = "0";
+
+    cleanup();
+    callback();
+    playResultSfxAfterFadeOut();
+  }
+
+  // ✅ 讓 skip 可以點
+  whiteFade.style.pointerEvents = "auto";
+  skipFadeBtn.style.pointerEvents = "auto";
+
+  // ✅ 顯示 Skip
+  skipFadeBtn.style.display = "block";
+  skipFadeBtn.onclick = finishEarly;
+
+  // 白屏淡入
+  whiteFade.style.transition = `opacity ${FADE_IN}ms linear`;
+  whiteFade.style.opacity = "1";
+
+  setTimeout(() => {
+    if (finished) return;
+    finished = true;
+
+    // ✅ 正常結束：先進結局、再淡出白屏、白屏結束後才播結局音效
+    callback();
+
+    whiteFade.style.transition = `opacity ${FADE_OUT}ms ease`;
+    whiteFade.style.opacity = "0";
+
+    cleanup();
+    playResultSfxAfterFadeOut();
+  }, FADE_IN);
 }
-
-// 切成吃東西的 GIF
-egg.src = EGG_EAT_SRC;
-
-// 如果你的 state 物件沒有 eggTimer，先在一開始加： state.eggTimer = null;
 
 function addIngredient(id) {
   if (state.chosenIngredients.length >= 3) return;
@@ -533,8 +606,13 @@ function addIngredient(id) {
 
   state.chosenIngredients.push(id);
   updateSlots();
-
+  Sound.play(Sound.eat);
   const egg = document.getElementById("main-egg");
+
+  // ✅ 讓桌面上的該食材消失（CSS: .ingredient.used { display:none; }）
+  document.querySelectorAll(".ingredient").forEach((el) => {
+    if (Number(el.dataset.id) === Number(id)) el.classList.add("used");
+  });
 
   // 先清掉舊的計時器（避免連續餵食卡住）
   if (state.eggTimer) {
@@ -542,11 +620,12 @@ function addIngredient(id) {
     state.eggTimer = null;
   }
 
-  // 切成吃東西的 GIF
+  egg.classList.add("eating"); // ✅ 吃飯開始：縮一點
   egg.src = EGG_EAT_SRC;
 
   // 等 GIF 播完才換回待機蛋
   state.eggTimer = setTimeout(() => {
+    egg.classList.remove("eating"); // ✅ 吃完：恢復
     egg.src = EGG_IDLE_SRC;
     state.eggTimer = null;
   }, EGG_EAT_DURATION);
@@ -579,15 +658,17 @@ function updateSlots() {
 
     if (id) {
       const ingData = ingredients.find((x) => x.id === id);
-      slot.innerHTML = `<img src="./img/${ingData.img}"><div class="slot-remove">x</div>`;
+      // ✅ 有食材：顯示右上角叉叉
+      slot.innerHTML = `<img src="./img/${ingData.img}">
+                    <div class="slot-remove" style="display:block">x</div>`;
 
-      // 重新綁定移除事件
       slot.querySelector(".slot-remove").onclick = (e) => {
         e.stopPropagation();
         removeIngredient(i);
       };
     } else {
-      slot.innerHTML = `<div class="slot-remove">x</div>`;
+      // ✅ 空格：不要顯示叉叉
+      slot.innerHTML = `<div class="slot-remove" style="display:none">x</div>`;
     }
   });
 
@@ -610,9 +691,14 @@ function resetGame() {
 // =========================================
 //  5. 結果與圖鑑系統 (核心修改)
 // =========================================
+updateHands("page-result");
 function showResult() {
+  console.log("SHOW RESULT");
   pages.game.style.display = "none";
-  pages.result.style.display = "block";
+  pages.result.style.display = "flex";
+
+  pages.result.classList.add("active-page");
+  pages.result.classList.remove("hidden-page", "scrolled-up");
 
   // 1. 將選中的 ID 排序 (確保 1-2-3 和 3-2-1 是一樣的)
   const sortedIds = [...state.chosenIngredients].sort((a, b) => a - b);
@@ -658,11 +744,23 @@ function showResult() {
   };
   document.getElementById("btn-res-book").onclick = () => {
     playCurtainTransition(() => {
+      // 關結果頁
       pages.result.style.display = "none";
+      pages.result.classList.remove("active-page");
+      pages.result.classList.add("hidden-page");
+      pages.result.classList.remove("scrolled-up");
+
+      // 先渲染圖鑑
       renderGallery();
-      pages.gallery.style.display = "block";
+
+      // ✅ 開圖鑑頁：用 flex（因為 full-page 是 flex 版型）
+      pages.gallery.style.display = "flex";
+      pages.gallery.classList.add("active-page");
+      pages.gallery.classList.remove("hidden-page", "scrolled-up");
     });
   };
+
+  state.lastResultIsFail = !!result.isFail;
 }
 
 function renderGallery() {
@@ -717,8 +815,17 @@ function renderGallery() {
 
   document.getElementById("btn-gallery-back").onclick = () => {
     playCurtainTransition(() => {
+      // 關圖鑑頁
       pages.gallery.style.display = "none";
-      pages.game.style.display = "block";
+      pages.gallery.classList.remove("active-page");
+      pages.gallery.classList.add("hidden-page");
+      pages.gallery.classList.remove("scrolled-up");
+
+      // ✅ 回遊戲頁也用 flex（避免版型怪掉）
+      pages.game.style.display = "flex";
+      pages.game.classList.add("active-page");
+      pages.game.classList.remove("hidden-page", "scrolled-up");
+
       resetGame();
     });
   };
@@ -731,21 +838,41 @@ function scrollTransition(curr, next) {
   curr.classList.add("scrolled-up");
   curr.classList.remove("active-page");
   next.style.display = "flex";
-  void next.offsetWidth; // Trigger Reflow
+  void next.offsetWidth;
   next.classList.remove("hidden-page");
   next.classList.add("active-page");
+
+  // ✅ 自動更新手（next.id 就是 page-story / page-select 這種）
+  updateHands(next.id);
 }
 
 function playCurtainTransition(callback) {
   const layer = document.getElementById("curtain-layer");
+
+  // ✅ 布幕開始關上的瞬間：播音效
+  if (Sound?.curtain) {
+    Sound.curtain.currentTime = 0; // 每次從頭播
+    Sound.curtain.play().catch(() => {});
+  }
+
+  // 關布幕
   layer.classList.add("curtains-closed");
+
+  // 等布幕關上
   setTimeout(() => {
     if (callback) callback();
+
+    // 再等一下，打開布幕
     setTimeout(() => {
       layer.classList.remove("curtains-closed");
     }, 500);
   }, 800);
+
+  // （你現在已經刪掉其他頁的手，這行留著或刪掉都沒影響）
+  updateHands("page-game");
 }
+
+updateHands("page-gallery"); // 這個 pageId 你沒寫分支 → 會全部隱藏（正好）
 
 function initTopUI() {
   const modal = document.getElementById("tutorial-modal");
@@ -763,4 +890,114 @@ function initTopUI() {
       if (e.target === modal) modal.style.display = "none";
     };
   }
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".img-btn")) {
+    Sound?.play?.(Sound.uiClick);
+  }
+});
+
+// =========================================
+// 🎵 BGM：第一次互動後啟動
+// =========================================
+let bgmStarted = false;
+
+document.addEventListener(
+  "click",
+  () => {
+    if (!bgmStarted && !Sound.muted) {
+      Sound.bgm.play().catch(() => {});
+      bgmStarted = true;
+    }
+  },
+  { once: true }
+);
+const btnSound = document.getElementById("btn-sound");
+
+btnSound?.addEventListener("click", () => {
+  Sound.muted = !Sound.muted;
+
+  if (Sound.muted) {
+    Sound.bgm.pause();
+    btnSound.classList.add("muted");
+  } else {
+    Sound.bgm.play().catch(() => {});
+    btnSound.classList.remove("muted");
+  }
+});
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function updateHands(pageId) {
+  // 全部先藏
+  document
+    .querySelectorAll(".hand-video")
+    .forEach((v) => v.classList.remove("show"));
+
+  // 介紹頁：手 A
+  if (pageId === "page-story") {
+    document.getElementById("hand-intro")?.classList.add("show");
+  }
+
+  // 主食選擇頁 + 完結頁：同一組手 B
+  if (pageId === "page-select" || pageId === "page-result") {
+    document.getElementById("hand-idle")?.classList.add("show");
+  }
+
+  // 廚房頁：手 C
+  if (pageId === "page-game") {
+    document.getElementById("hand-kitchen")?.classList.add("show");
+  }
+
+  function updateHands(pageId) {
+    return; // 🔥 直接停用
+  }
+}
+
+function startHandsCarouselById(wrapId, intervalMs = 700) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+
+  const frames = Array.from(wrap.querySelectorAll(".hand-frame"));
+  if (frames.length <= 1) return;
+
+  let idx = 0;
+  frames.forEach((img, i) => img.classList.toggle("show", i === 0));
+
+  // 每個輪播各自一個 timer
+  const key = `__handsTimer_${wrapId}`;
+  if (window[key]) clearInterval(window[key]);
+
+  window[key] = setInterval(() => {
+    frames[idx].classList.remove("show");
+    idx = (idx + 1) % frames.length;
+    frames[idx].classList.add("show");
+  }, intervalMs);
+}
+
+// ================================
+// Intro 手部輪播（修復缺失）
+// ================================
+function startIntroHandsCarousel() {
+  const wrap = document.getElementById("hands-intro");
+  if (!wrap) return;
+
+  const frames = Array.from(wrap.querySelectorAll(".hand-frame"));
+  if (frames.length <= 1) return;
+
+  let idx = 0;
+  frames.forEach((img, i) => img.classList.toggle("show", i === 0));
+
+  if (window.__introHandsTimer) {
+    clearInterval(window.__introHandsTimer);
+  }
+
+  window.__introHandsTimer = setInterval(() => {
+    frames[idx].classList.remove("show");
+    idx = (idx + 1) % frames.length;
+    frames[idx].classList.add("show");
+  }, 700); // 跟你之前說的一樣節奏
 }
